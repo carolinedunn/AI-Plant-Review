@@ -1,0 +1,6 @@
+{
+  "name": "AI Plant Review",
+  "description": "Real-time AI-powered plant health monitoring dashboard receiving remote snapshots.",
+  "requestFramePermissions": ["camera"],
+  "majorCapabilities": []
+}
