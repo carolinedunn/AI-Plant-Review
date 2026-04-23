@@ -131,13 +131,3 @@ Automatically deletes photos older than 2 days.
 ```
 
 ---
-
-## 🔐 Security & Secret Protection
-
-### ⚠️ IMPORTANT: LEAKED SECRETS
-If you have pushed this repository to a public location (like a public GitHub repo), your Firebase credentials in `firebase-applet-config.json` may have been exposed. 
-
-**Recommended Action:**
-1. **Rotate Secrets**: Go to the Google Cloud Console or Firebase Console and rotate your Web API key.
-2. **Update .gitignore**: I have added `firebase-applet-config.json` to the `.gitignore` to prevent it from being committed in the future.
-3. **Never Share upload.py**: Do not upload your `upload.py` with hardcoded credentials to a public repository. Use the template provided above.
