@@ -152,14 +152,14 @@ export default function App() {
         </div>
       </header>
 
-      <main className="flex-1 grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-8 min-h-0">
+      <main className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-8 min-h-0">
         {/* Left Column: Visual Viewport */}
-        <section className="flex flex-col gap-6 min-h-0 min-w-0">
-          <div className="relative flex-1 bg-black/40 rounded-[32px] border border-glass-border overflow-hidden min-h-[500px] shadow-2xl">
+        <section className="flex flex-col gap-6 min-h-0 min-w-0 items-center justify-start">
+          <div className="relative w-full aspect-[3/4] lg:aspect-square bg-black/40 rounded-[32px] border border-glass-border overflow-hidden shadow-2xl flex items-center justify-center mt-2">
             {remoteImage ? (
               <img 
                 src={`data:image/jpeg;base64,${remoteImage}`} 
-                className="w-full h-full object-contain"
+                className="w-full h-full object-cover"
                 alt="Latest Plant Snapshot"
               />
             ) : (
@@ -170,11 +170,11 @@ export default function App() {
             )}
             
             {/* Visual Overlays */}
-            <div className="absolute inset-0 pointer-events-none border-[20px] border-black/40" />
+            <div className="absolute inset-0 pointer-events-none border-[12px] border-black/40" />
 
             {/* Overlay Metadata */}
-            <div className="absolute bottom-10 left-10 pointer-events-none">
-              <div className="bg-black/80 backdrop-blur-xl border border-white/10 px-4 py-2 rounded-xl text-[10px] font-mono text-accent-green shadow-xl">
+            <div className="absolute bottom-6 left-6 pointer-events-none">
+              <div className="bg-black/80 backdrop-blur-xl border border-white/10 px-3 py-1.5 rounded-lg text-[9px] font-mono text-accent-green shadow-xl">
                 CAM_01 // SOURCE: R-PI_UPLINK
               </div>
             </div>
@@ -186,51 +186,51 @@ export default function App() {
           {/* Health Score Card */}
           <div className="glass-card">
             <p className="text-[11px] uppercase tracking-[1.5px] text-text-dim mb-4">Vitality Score</p>
-            <div className="flex items-center gap-6">
-              <div className="relative w-24 h-24 flex items-center justify-center">
+            <div className="flex items-center gap-8">
+              <div className="relative w-28 h-28 flex items-center justify-center">
                 <svg className="w-full h-full transform -rotate-90">
                   <circle
-                    cx="48"
-                    cy="48"
-                    r="40"
+                    cx="56"
+                    cy="56"
+                    r="48"
                     stroke="currentColor"
-                    strokeWidth="4"
+                    strokeWidth="5"
                     fill="transparent"
                     className="text-white/5"
                   />
                   <motion.circle
-                    cx="48"
-                    cy="48"
-                    r="40"
+                    cx="56"
+                    cy="56"
+                    r="48"
                     stroke="currentColor"
-                    strokeWidth="4"
+                    strokeWidth="5"
                     fill="transparent"
-                    strokeDasharray={251.2}
-                    initial={{ strokeDashoffset: 251.2 }}
-                    animate={{ strokeDashoffset: 251.2 - (251.2 * (healthScore || 0)) / 100 }}
+                    strokeDasharray={301.6}
+                    initial={{ strokeDashoffset: 301.6 }}
+                    animate={{ strokeDashoffset: 301.6 - (301.6 * (healthScore || 0)) / 100 }}
                     className="text-accent-green"
                   />
                 </svg>
-                <span className="absolute text-2xl font-light">{healthScore || '--'}</span>
+                <span className="absolute text-3xl font-light">{healthScore || '--'}</span>
               </div>
-              <div>
-                <p className={`text-sm font-medium ${healthScore && healthScore > 70 ? 'text-accent-green' : 'text-orange-400'}`}>
-                  {healthScore ? (healthScore > 80 ? 'Optimal' : healthScore > 60 ? 'Stable' : 'Attention Required') : 'Pending Scan'}
+              <div className="space-y-1">
+                <p className={`text-lg font-medium ${healthScore && healthScore > 70 ? 'text-accent-green' : 'text-orange-400'}`}>
+                  {healthScore ? (healthScore > 80 ? 'Optimal Condition' : healthScore > 60 ? 'Stable Growth' : 'Attention Required') : 'Analysis Pending'}
                 </p>
-                <p className="text-[10px] text-text-dim mt-1 leading-relaxed">
-                  Based on AI visual assessment of leaf density and color variance.
+                <p className="text-xs text-text-dim leading-relaxed max-w-[200px]">
+                  Visual assessment of morphology, color balance, and leaf texture.
                 </p>
               </div>
             </div>
           </div>
 
           <div className="glass-card flex flex-col min-h-[400px] lg:flex-1">
-            <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center justify-between mb-6 border-b border-white/5 pb-4">
               <p className="text-[11px] uppercase tracking-[1.5px] text-text-dim">Botanical Analysis</p>
               <Zap size={14} className={isAnalyzing ? "text-accent-green animate-pulse" : "text-accent-green opacity-30"} />
             </div>
             
-            <div className="flex-1 overflow-y-auto pr-2 custom-scrollbar space-y-6">
+            <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar">
               <AnimatePresence mode="wait">
                 {isAnalyzing ? (
                   <motion.div 
@@ -238,10 +238,10 @@ export default function App() {
                     initial={{ opacity: 0 }}
                     animate={{ opacity: 1 }}
                     exit={{ opacity: 0 }}
-                    className="space-y-4"
+                    className="space-y-6 pt-4"
                   >
-                    {[1, 2, 3].map(i => (
-                      <div key={i} className="h-4 bg-white/5 animate-pulse rounded w-full" style={{ animationDelay: `${i * 200}ms` }} />
+                    {[1, 2, 3, 4].map(i => (
+                      <div key={i} className="h-6 bg-white/5 animate-pulse rounded w-full" style={{ animationDelay: `${i * 150}ms` }} />
                     ))}
                   </motion.div>
                 ) : aiReport ? (
@@ -249,7 +249,7 @@ export default function App() {
                     key="report"
                     initial={{ opacity: 0, y: 10 }}
                     animate={{ opacity: 1, y: 0 }}
-                    className="text-lg prose prose-invert prose-lg text-text-dim/90 prose-p:my-4 prose-strong:text-white prose-headings:text-white prose-headings:font-light prose-headings:tracking-tight border-l-2 border-accent-green/30 pl-6 py-2"
+                    className="text-xl prose prose-invert prose-xl max-w-none text-white/90 prose-p:leading-relaxed prose-p:my-6 prose-strong:text-accent-green prose-strong:font-bold prose-headings:text-white prose-headings:font-light prose-headings:tracking-tight border-l-4 border-accent-green/40 pl-8 py-2"
                   >
                     <ReactMarkdown>{aiReport}</ReactMarkdown>
                   </motion.div>

@@ -1,6 +1,24 @@
 # 🌿 AI Plant Review: Raspberry Pi Setup Guide
 
-This guide contains the `crontab` configurations required to automate your Raspberry Pi plant monitoring station. 
+This guide contains the instructions, scripts, and configurations required to automate your Raspberry Pi plant monitoring station.
+
+## 🛠 Prerequisites
+
+### 1. Required Packages
+Ensure your Raspberry Pi is up to date and has the necessary tools installed. We use `libcamera` for official Pi Cameras or `fswebcam` for USB webcams.
+
+```bash
+sudo apt-get update
+sudo apt-get install curl coreutils fswebcam python3
+```
+
+### 2. Directory Structure
+Ensure the storage directory exists where photos will be saved:
+```bash
+mkdir -p /home/admin/PlantPhotos
+```
+
+---
 
 ## 📸 Camera Script Setup (`takephoto.py`)
 
@@ -10,7 +28,7 @@ Create the Python script on your Raspberry Pi to handle the photo capture.
    ```bash
    nano /home/admin/PlantPhotos/takephoto.py
    ```
-2. Paste the following code (Optimized for Raspberry Pi Camera Module):
+2. Paste the following code:
    ```python
    import os
    import time
@@ -27,15 +45,17 @@ Create the Python script on your Raspberry Pi to handle the photo capture.
    timestamp = datetime.now().strftime("%Y-%m-%d_%H%M")
    filename = f"{SAVE_PATH}/plant_{timestamp}.jpg"
 
-   # Execute capture command (using libcamera for newer Pi OS)
-   # If you are on an older OS, use 'raspistill -o' instead
-   try:
-       print(f"Capturing image: {filename}")
-       os.system(f"libcamera-still -o {filename} --nopreview --width 1280 --height 720")
-       print("Capture successful.")
-   except Exception as e:
-       print(f"Error capturing image: {e}")
+   # Execute capture command
+   # Option A: For official Raspberry Pi Camera Module
+   # os.system(f"libcamera-still -o {filename} --nopreview --width 1280 --height 720")
+   
+   # Option B: For USB Webcams (using fswebcam)
+   os.system(f"fswebcam -r 1280x720 --no-banner {filename}")
+
+   print(f"Captured: {filename}")
    ```
+
+---
 
 ## 📋 Crontab Configuration
 
@@ -48,9 +68,11 @@ Takes a high-resolution photo every 15 minutes during daylight hours (7:00 AM to
 ```
 
 ### 2. Automatic AI Upload
-Finds the most recent photo and securely streams it to the **AI Plant Review** dashboard every 15 minutes.
+Finds the most recent photo and securely streams it to the **AI Plant Review** dashboard.
+
+**Option: Every 2 hours (7:00 AM to 7:00 PM)**
 ```bash
-*/15 * * * * LATEST=$(ls -t /home/admin/PlantPhotos/*.jpg | head -1); { echo -n '{"secret": "[SECRET_HERE]", "image": "'; base64 -w 0 "$LATEST"; echo -n '"}'; } | curl -L -X POST [Publish_URL_Here]/api/upload-image -H "Content-Type: application/json" -d @-
+0 7,9,11,13,15,17,19 * * * LATEST=$(ls -t /home/admin/PlantPhotos/*.jpg | head -1); { echo -n '{"secret": "Caroline", "image": "'; base64 -w 0 "$LATEST"; echo -n '"}'; } | curl -L -X POST https://ai-plant-review-789076151805.us-west1.run.app/api/upload-image -H "Content-Type: application/json" -d @-
 ```
 
 ### 3. Storage Maintenance (Cleanup)
@@ -62,20 +84,5 @@ Automatically deletes photos older than 2 days to prevent your SD card from fill
 
 ---
 
-## 🛠 Prerequisites
-
-### Directory Structure
-Ensure the storage directory exists:
-```bash
-mkdir -p /home/admin/PlantPhotos
-```
-
-### Required Packages
-The upload command requires `curl` and `base64` (Standard on most Raspberry Pi OS versions).
-```bash
-sudo apt-get update
-sudo apt-get install curl coreutils
-```
-
 ## 🔐 Security Note
-The upload command uses a secret token (`"secret": "secret-here"`). Ensure your Cloud Run environment variable `UPLOAD_SECRET` matches this value in the AI Studio settings.
+The upload command uses a secret token (`"secret": "Caroline"`). Ensure your Cloud Run environment variable `UPLOAD_SECRET` matches this value in the AI Studio settings.
