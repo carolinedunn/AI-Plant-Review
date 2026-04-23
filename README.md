@@ -62,9 +62,9 @@ Create the Python script on your Raspberry Pi to handle the photo capture.
 To install these tasks, run `crontab -e` on your Raspberry Pi and paste the following lines at the bottom of the file.
 
 ### 1. Automated Photo Capture
-Takes a photo every 15 minutes during daylight hours.
+Takes a photo every 30 minutes from 7 am to 7 pm daily.
 ```bash
-*/15 7-18 * * * /usr/bin/python3 /home/admin/PlantPhotos/takephoto.py
+*/30 7-18 * * * /usr/bin/python3 /home/admin/PlantPhotos/takephoto.py
 ```
 
 ### 2. Automatic AI Upload (Firebase Direct)
@@ -120,8 +120,8 @@ else:
 
 3. Add to Crontab:
 ```bash
-# Upload every 2 hours
-0 7,9,11,13,15,17,19 * * * /usr/bin/python3 /home/admin/PlantPhotos/upload.py
+# From 7 am to 7 pm daily, upload every 2 hours at 7:02 am, 9:02 am, etc until 19:02. This allows for the most recent photo to be uploaded 2 minutes after it is taken.
+2 7,9,11,13,15,17,19 * * * /usr/bin/python3 /home/admin/PlantPhotos/upload.py
 ```
 
 ### 3. Storage Maintenance (Cleanup)
