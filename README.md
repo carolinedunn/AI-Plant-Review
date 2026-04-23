@@ -62,27 +62,82 @@ Create the Python script on your Raspberry Pi to handle the photo capture.
 To install these tasks, run `crontab -e` on your Raspberry Pi and paste the following lines at the bottom of the file.
 
 ### 1. Automated Photo Capture
-Takes a high-resolution photo every 15 minutes during daylight hours (7:00 AM to 6:59 PM).
+Takes a photo every 15 minutes during daylight hours.
 ```bash
 */15 7-18 * * * /usr/bin/python3 /home/admin/PlantPhotos/takephoto.py
 ```
 
-### 2. Automatic AI Upload
-Finds the most recent photo and securely streams it to the **AI Plant Review** dashboard.
+### 2. Automatic AI Upload (Firebase Direct)
+Sends the most recent photo directly to your Firestore database.
 
-**Option: Every 2 hours (7:00 AM to 7:00 PM)**
+1. Create `upload.py`:
+   ```bash
+   nano /home/admin/PlantPhotos/upload.py
+   ```
+2. Paste the script below (Replace the placeholders with values from your `firebase-applet-config.json`):
+
+```python
+import base64
+import requests
+import os
+import time
+
+# --- CONFIGURATION (DO NOT SHARE PUBLICLY) ---
+API_KEY = "<YOUR_WEB_API_KEY>"
+PROJECT_ID = "<YOUR_PROJECT_ID>"
+DB_ID = "<YOUR_FIRESTORE_DB_ID>"
+SECRET = "<YOUR_UPLOAD_SECRET>"
+IMAGE_DIR = "/home/admin/PlantPhotos"
+# ---------------------
+
+def get_latest_image():
+    files = [os.path.join(IMAGE_DIR, f) for f in os.listdir(IMAGE_DIR) if f.endswith('.jpg')]
+    return max(files, key=os.path.getctime) if files else None
+
+latest = get_latest_image()
+if not latest:
+    print("No photos found.")
+    exit()
+
+with open(latest, "rb") as img_file:
+    b64_string = base64.b64encode(img_file.read()).decode('utf-8')
+
+url = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/{DB_ID}/documents/snapshots?key={API_KEY}"
+payload = {
+    "fields": {
+        "image": {"stringValue": b64_string},
+        "timestamp": {"integerValue": str(int(time.time() * 1000))},
+        "secret": {"stringValue": SECRET}
+    }
+}
+
+response = requests.post(url, json=payload)
+if response.status_code == 200:
+    print(f"✅ Uploaded: {os.path.basename(latest)}")
+else:
+    print(f"❌ Error {response.status_code}: {response.text}")
+```
+
+3. Add to Crontab:
 ```bash
-0 7,9,11,13,15,17,19 * * * LATEST=$(ls -t /home/admin/PlantPhotos/*.jpg | head -1); { echo -n '{"secret": "Caroline", "image": "'; base64 -w 0 "$LATEST"; echo -n '"}'; } | curl -L -X POST https://ai-plant-review-789076151805.us-west1.run.app/api/upload-image -H "Content-Type: application/json" -d @-
+# Upload every 2 hours
+0 7,9,11,13,15,17,19 * * * /usr/bin/python3 /home/admin/PlantPhotos/upload.py
 ```
 
 ### 3. Storage Maintenance (Cleanup)
-Automatically deletes photos older than 2 days to prevent your SD card from filling up.
+Automatically deletes photos older than 2 days.
 ```bash
-# Run cleanup once a day at midnight
 0 0 * * * find /home/admin/PlantPhotos/ -name "*.jpg" -type f -mtime +2 -delete
 ```
 
 ---
 
-## 🔐 Security Note
-The upload command uses a secret token (`"secret": "Caroline"`). Ensure your Cloud Run environment variable `UPLOAD_SECRET` matches this value in the AI Studio settings.
+## 🔐 Security & Secret Protection
+
+### ⚠️ IMPORTANT: LEAKED SECRETS
+If you have pushed this repository to a public location (like a public GitHub repo), your Firebase credentials in `firebase-applet-config.json` may have been exposed. 
+
+**Recommended Action:**
+1. **Rotate Secrets**: Go to the Google Cloud Console or Firebase Console and rotate your Web API key.
+2. **Update .gitignore**: I have added `firebase-applet-config.json` to the `.gitignore` to prevent it from being committed in the future.
+3. **Never Share upload.py**: Do not upload your `upload.py` with hardcoded credentials to a public repository. Use the template provided above.

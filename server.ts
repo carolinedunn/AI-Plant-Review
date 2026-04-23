@@ -40,9 +40,9 @@ async function startServer() {
     const { image, secret, score, analysis } = req.body;
     
     const expectedSecret = process.env.UPLOAD_SECRET;
-    if (expectedSecret && secret !== expectedSecret) {
-      console.log(`[POST] /api/upload-image: Invalid secret provided`);
-      return res.status(401).json({ error: 'Unauthorized: Invalid secret' });
+    if (!expectedSecret || secret !== expectedSecret) {
+      console.log(`[POST] /api/upload-image: Unauthorized access attempt`);
+      return res.status(401).json({ error: 'Unauthorized: Invalid or missing secret' });
     }
 
     if (!image) return res.status(400).json({ error: 'No image data provided' });
