@@ -78,4 +78,4 @@ sudo apt-get install curl coreutils
 ```
 
 ## 🔐 Security Note
-The upload command uses a secret token (`"secret": "Caroline"`). Ensure your Cloud Run environment variable `UPLOAD_SECRET` matches this value in the AI Studio settings.
+The upload command uses a secret token (`"secret": "secret-here"`). Ensure your Cloud Run environment variable `UPLOAD_SECRET` matches this value in the AI Studio settings.
