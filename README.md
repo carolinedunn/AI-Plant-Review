@@ -50,7 +50,7 @@ Takes a high-resolution photo every 15 minutes during daylight hours (7:00 AM to
 ### 2. Automatic AI Upload
 Finds the most recent photo and securely streams it to the **AI Plant Review** dashboard every 15 minutes.
 ```bash
-*/15 * * * * LATEST=$(ls -t /home/admin/PlantPhotos/*.jpg | head -1); { echo -n '{"secret": "Caroline", "image": "'; base64 -w 0 "$LATEST"; echo -n '"}'; } | curl -L -X POST https://florapulse-iot-plant-care-789076151805.us-west1.run.app/api/upload-image -H "Content-Type: application/json" -d @-
+*/15 * * * * LATEST=$(ls -t /home/admin/PlantPhotos/*.jpg | head -1); { echo -n '{"secret": "[SECRET_HERE]", "image": "'; base64 -w 0 "$LATEST"; echo -n '"}'; } | curl -L -X POST [Publish_URL_Here]/api/upload-image -H "Content-Type: application/json" -d @-
 ```
 
 ### 3. Storage Maintenance (Cleanup)
