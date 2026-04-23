@@ -33,6 +33,13 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { GoogleGenAI } from "@google/genai";
 import ReactMarkdown from 'react-markdown';
+import { initializeApp } from 'firebase/app';
+import { getFirestore as getClientFirestore, collection, query, orderBy, limit, onSnapshot, doc, getDocFromServer } from 'firebase/firestore';
+import firebaseConfig from '../firebase-applet-config.json';
+
+// Initialize Firebase Client
+const app = initializeApp(firebaseConfig);
+const clientDb = getClientFirestore(app, firebaseConfig.firestoreDatabaseId);
 
 // Initialize Gemini
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -57,7 +64,49 @@ export default function App() {
   const [error, setError] = useState<string | null>(null);
   const [remoteImage, setRemoteImage] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
+  const [history, setHistory] = useState<any[]>([]);
   const lastAnalyzedRef = useRef<number | null>(null);
+
+  // Connection health check for Firestore
+  useEffect(() => {
+    const testConnection = async () => {
+      try {
+        await getDocFromServer(doc(clientDb, 'snapshots', 'ping'));
+      } catch (err: any) {
+        if (err.message.includes('permission-denied')) {
+          console.warn("Firestore access restricted by rules (expected if 'ping' doesn't exist).");
+        }
+      }
+    };
+    testConnection();
+  }, []);
+
+  // Real-time history listener
+  useEffect(() => {
+    const q = query(collection(clientDb, 'snapshots'), orderBy('timestamp', 'desc'), limit(5));
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+      const data = snapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setHistory(data);
+
+      // Auto-focus the latest one if it's new
+      if (data.length > 0) {
+        const latest = data[0];
+        if (!lastAnalyzedRef.current || latest.timestamp > lastAnalyzedRef.current) {
+          setRemoteImage(latest.image);
+          setLastUpdated(latest.timestamp);
+          setHealthScore(latest.score || null);
+          setAiReport(latest.analysis || null);
+        }
+      }
+    }, (err) => {
+      console.error("Firestore history listener error:", err);
+      // Fallback: stay with existing history or empty
+    });
+    return () => unsubscribe();
+  }, []);
 
   const fetchLatestImage = async () => {
     try {
@@ -74,7 +123,9 @@ export default function App() {
 
   useEffect(() => {
     fetchLatestImage();
-    const interval = setInterval(fetchLatestImage, 30000); // Check every 30s
+    const interval = setInterval(() => {
+      fetchLatestImage();
+    }, 30000); // Check every 30s
     return () => clearInterval(interval);
   }, []);
 
@@ -109,6 +160,19 @@ export default function App() {
         const data = JSON.parse(jsonMatch ? jsonMatch[0] : text);
         setHealthScore(data.score);
         setAiReport(data.analysis);
+
+        // Update persistence since analyzer is client-side
+        await fetch('/api/upload-image', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            image,
+            secret: process.env.UPLOAD_SECRET,
+            score: data.score,
+            analysis: data.analysis
+          })
+        });
+        // We don't need fetchHistory() anymore as onSnapshot handles it
       } catch (e) {
         setAiReport(text); // Fallback to raw text
         setHealthScore(null);
@@ -265,6 +329,57 @@ export default function App() {
           </div>
         </aside>
       </main>
+
+      {/* History Section */}
+      <section className="mt-12 w-full">
+        <h2 className="text-[11px] uppercase tracking-[1.5px] text-text-dim mb-6 flex items-center gap-2">
+          <Activity size={12} className="text-accent-green" />
+          Snapshot History (Last 5)
+        </h2>
+        
+        <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          {history.length > 0 ? history.map((item, idx) => (
+            <motion.div 
+              key={item.id}
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.1 }}
+              className="glass-card !p-3 group cursor-pointer hover:border-accent-green/30 transition-colors"
+              onClick={() => {
+                setRemoteImage(item.image);
+                setLastUpdated(item.timestamp);
+                setHealthScore(item.score);
+                setAiReport(item.analysis);
+              }}
+            >
+              <div className="relative aspect-square rounded-2xl overflow-hidden mb-3">
+                <img 
+                  src={`data:image/jpeg;base64,${item.image}`} 
+                  className="w-full h-full object-cover transition-transform group-hover:scale-110" 
+                  alt={`History ${idx}`}
+                />
+                <div className="absolute inset-0 bg-black/40 group-hover:bg-transparent transition-colors" />
+                <div className="absolute top-2 right-2 px-2 py-1 bg-black/80 backdrop-blur-md rounded-lg text-[9px] font-mono text-accent-green border border-white/10">
+                  {item.score || '--'}/100
+                </div>
+              </div>
+              <p className="text-[10px] font-mono text-white/40 group-hover:text-accent-green transition-colors">
+                {new Date(item.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              </p>
+              <p className="text-[9px] text-white/20 mt-0.5">
+                {new Date(item.timestamp).toLocaleDateString()}
+              </p>
+            </motion.div>
+          )) : (
+            [1, 2, 3, 4, 5].map(i => (
+              <div key={i} className="glass-card !p-3 animate-pulse">
+                <div className="aspect-square bg-white/5 rounded-2xl mb-3" />
+                <div className="h-2 bg-white/5 rounded w-1/2" />
+              </div>
+            ))
+          )}
+        </div>
+      </section>
 
       <style>{`
         .glass-card {

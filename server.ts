@@ -2,9 +2,23 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import admin from 'firebase-admin';
+import { getFirestore } from 'firebase-admin/firestore';
+import firebaseConfig from './firebase-applet-config.json' with { type: 'json' };
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+
+// Initialize Firebase Admin
+if (!admin.apps.length) {
+  admin.initializeApp({
+    projectId: firebaseConfig.projectId,
+  });
+}
+
+// Connect to the specific database instance provided in the config
+const db = getFirestore(firebaseConfig.firestoreDatabaseId);
+const snapshotsCol = db.collection('snapshots');
 
 async function startServer() {
   const app = express();
@@ -12,16 +26,19 @@ async function startServer() {
 
   app.use(express.json({ limit: '10mb' }));
 
-  // In-memory data store for image
   let latestImage: string | null = null;
   let lastUploadTime: number | null = null;
 
+  // Debug logging for reverse proxy issues
+  app.use((req, res, next) => {
+    console.log(`[${req.method}] ${req.url} - ${req.headers['x-forwarded-for'] || req.socket.remoteAddress}`);
+    next();
+  });
+
   // API Route for receiving images from Raspberry Pi
-  app.post('/api/upload-image', (req, res) => {
-    const { image, secret } = req.body;
+  app.post('/api/upload-image', async (req, res) => {
+    const { image, secret, score, analysis } = req.body;
     
-    // Optional security: Check for a secret token
-    // You can define UPLOAD_SECRET in your .env
     const expectedSecret = process.env.UPLOAD_SECRET;
     if (expectedSecret && secret !== expectedSecret) {
       console.log(`[POST] /api/upload-image: Invalid secret provided`);
@@ -30,10 +47,35 @@ async function startServer() {
 
     if (!image) return res.status(400).json({ error: 'No image data provided' });
     
-    latestImage = image; // Base64 string
-    lastUploadTime = Date.now();
-    console.log(`[POST] /api/upload-image: Received new snapshot (${Math.round(image.length / 1024)}KB)`);
-    res.json({ status: 'ok', timestamp: lastUploadTime });
+    const timestamp = Date.now();
+    latestImage = image;
+    lastUploadTime = timestamp;
+
+    try {
+      // Save to Firestore
+      await snapshotsCol.add({
+        image,
+        timestamp,
+        score: score || null,
+        analysis: analysis || null
+      });
+
+      console.log(`[POST] /api/upload-image: Received and saved new snapshot`);
+      res.json({ status: 'ok', timestamp });
+    } catch (err: any) {
+      console.error('Error saving snapshot to Firestore:', err);
+      res.status(500).json({ error: 'Failed to persist snapshot' });
+    }
+  });
+
+  // Dummy GET to test if internal routing works
+  app.get('/api/upload-image', (req, res) => {
+    res.json({ status: 'ready', method: 'Use POST to upload' });
+  });
+
+  // API Route to fetch history (DEPRECATED - App now uses Client SDK)
+  app.get('/api/history', async (req, res) => {
+    res.json({ info: "Use Firebase Client SDK for history" });
   });
 
   // API Route to fetch latest image

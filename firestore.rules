@@ -1,0 +1,18 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Snapshots: Public read, write restricted to secret-holders (Raspberry Pi)
+    match /snapshots/{snapshotId} {
+      allow read: if true;
+      allow create: if request.resource.data.secret == "Caroline" 
+                   && request.resource.data.image is string
+                   && request.resource.data.image.size() > 0;
+      allow update, delete: if false;
+    }
+  }
+}
