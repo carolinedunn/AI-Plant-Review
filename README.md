@@ -2,6 +2,41 @@
 
 This guide contains the `crontab` configurations required to automate your Raspberry Pi plant monitoring station. 
 
+## 📸 Camera Script Setup (`takephoto.py`)
+
+Create the Python script on your Raspberry Pi to handle the photo capture.
+
+1. Create the file:
+   ```bash
+   nano /home/admin/PlantPhotos/takephoto.py
+   ```
+2. Paste the following code (Optimized for Raspberry Pi Camera Module):
+   ```python
+   import os
+   import time
+   from datetime import datetime
+
+   # Configuration
+   SAVE_PATH = "/home/admin/PlantPhotos"
+   
+   # Ensure directory exists
+   if not os.path.exists(SAVE_PATH):
+       os.makedirs(SAVE_PATH)
+
+   # Generate filename with timestamp
+   timestamp = datetime.now().strftime("%Y-%m-%d_%H%M")
+   filename = f"{SAVE_PATH}/plant_{timestamp}.jpg"
+
+   # Execute capture command (using libcamera for newer Pi OS)
+   # If you are on an older OS, use 'raspistill -o' instead
+   try:
+       print(f"Capturing image: {filename}")
+       os.system(f"libcamera-still -o {filename} --nopreview --width 1280 --height 720")
+       print("Capture successful.")
+   except Exception as e:
+       print(f"Error capturing image: {e}")
+   ```
+
 ## 📋 Crontab Configuration
 
 To install these tasks, run `crontab -e` on your Raspberry Pi and paste the following lines at the bottom of the file.
