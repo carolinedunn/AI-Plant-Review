@@ -1,8 +1,29 @@
-# 🌿 AI Plant Review: Raspberry Pi Setup Guide
+# 🌿 AI Plant Review
 
-This guide contains the instructions, scripts, and configurations required to automate your Raspberry Pi plant monitoring station.
+A real-time plant monitoring dashboard powered by Gemini AI and Raspberry Pi. This project uses a Raspberry Pi to capture photos of your plants, uploads them to Firebase, and uses Gemini AI to analyze plant health, pests, and growth.
 
-## 🛠 Prerequisites
+## 🚀 Getting Started
+
+Follow these steps to set up your own plant monitoring station.
+
+### 1. Fork the Repository
+- Click the **Fork** button at the top right of this page to create your own copy of the project.
+- Once forked, you can clone it or import it directly into **Google AI Studio** for one-click deployment.
+
+### 2. Set Up Google AI Studio
+- Import your forked repository into [Google AI Studio](https://ai.studio/build).
+- Go to **Settings** and add the following Environment Variables:
+  - `GEMINI_API_KEY`: Your Google AI API Key (Get one [here](https://aistudio.google.com/app/apikey)).
+  - `UPLOAD_SECRET`: A custom password (e.g., `MySecret123`) that your Raspberry Pi will use to verify uploads.
+
+### 3. Set Up Firebase
+- In AI Studio, use the **Set up Firebase** tool to provision your database and authentication.
+- This will generate a `firebase-applet-config.json` file in your project root. **Keep this file private.**
+- Deploy the security rules provided in `firestore.rules` using the **Deploy Firebase** tool.
+
+---
+
+## 🛠 Raspberry Pi Setup
 
 ### 1. Required Packages
 Ensure your Raspberry Pi is up to date and has the necessary tools installed. We use `libcamera` for official Pi Cameras or `fswebcam` for USB webcams.
