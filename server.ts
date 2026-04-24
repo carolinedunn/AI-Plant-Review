@@ -12,12 +12,12 @@ const __dirname = path.dirname(__filename);
 // Initialize Firebase Admin
 if (!admin.apps.length) {
   admin.initializeApp({
-    projectId: firebaseConfig.projectId,
+    projectId: process.env.FIREBASE_PROJECT_ID || firebaseConfig.projectId,
   });
 }
 
 // Connect to the specific database instance provided in the config
-const db = getFirestore(firebaseConfig.firestoreDatabaseId);
+const db = getFirestore(process.env.FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId);
 const snapshotsCol = db.collection('snapshots');
 
 async function startServer() {

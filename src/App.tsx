@@ -38,8 +38,18 @@ import { getFirestore as getClientFirestore, collection, query, orderBy, limit, 
 import firebaseConfig from '../firebase-applet-config.json';
 
 // Initialize Firebase Client
-const app = initializeApp(firebaseConfig);
-const clientDb = getClientFirestore(app, firebaseConfig.firestoreDatabaseId);
+const config = {
+  apiKey: (import.meta as any).env.VITE_FIREBASE_API_KEY || firebaseConfig.apiKey,
+  authDomain: (import.meta as any).env.VITE_FIREBASE_AUTH_DOMAIN || firebaseConfig.authDomain,
+  projectId: (import.meta as any).env.VITE_FIREBASE_PROJECT_ID || firebaseConfig.projectId,
+  storageBucket: (import.meta as any).env.VITE_FIREBASE_STORAGE_BUCKET || firebaseConfig.storageBucket,
+  messagingSenderId: (import.meta as any).env.VITE_FIREBASE_MESSAGING_SENDER_ID || firebaseConfig.messagingSenderId,
+  appId: (import.meta as any).env.VITE_FIREBASE_APP_ID || firebaseConfig.appId,
+};
+
+const app = initializeApp(config);
+const databaseId = (import.meta as any).env.VITE_FIREBASE_DATABASE_ID || firebaseConfig.firestoreDatabaseId;
+const clientDb = getClientFirestore(app, databaseId);
 
 // Initialize Gemini
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
@@ -88,7 +98,7 @@ export default function App() {
       const data = snapshot.docs.map(doc => ({
         id: doc.id,
         ...doc.data()
-      }));
+      })) as any[];
       setHistory(data);
 
       // Auto-focus the latest one if it's new

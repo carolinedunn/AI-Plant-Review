@@ -21,6 +21,31 @@ Follow these steps to set up your own plant monitoring station.
 - This will generate a `firebase-applet-config.json` file in your project root. **Keep this file private.**
 - Deploy the security rules provided in `firestore.rules` using the **Deploy Firebase** tool.
 
+### 4. Publishing to Vercel
+To publish your dashboard to a custom URL with Vercel:
+1. Go to [Vercel](https://vercel.com/) and sign in with your GitHub account.
+2. Click **Add New** -> **Project**.
+3. Import your forked repository.
+4. **Environment Variables**: In the Vercel project settings, add the following variables:
+   - `GEMINI_API_KEY`: Your Google AI API Key.
+   - `UPLOAD_SECRET`: The same password you set in Google AI Studio.
+   - `VITE_FIREBASE_API_KEY`: Your Firebase API key.
+   - `VITE_FIREBASE_PROJECT_ID`: Your Firebase Project ID.
+   - `VITE_FIREBASE_APP_ID`: Your Firebase App ID.
+   - `VITE_FIREBASE_DATABASE_ID`: Your Firestore Database ID (from `firebase-applet-config.json`).
+   - `VITE_FIREBASE_AUTH_DOMAIN`: Your Firebase Auth Domain.
+   - `VITE_FIREBASE_STORAGE_BUCKET`: Your Firebase Storage Bucket.
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: Your Firebase Messaging Sender ID.
+5. Click **Deploy**. Vercel will build and host your application.
+
+### 5. Custom Domain
+If you want to use your own domain (e.g., `myplantreview.com`):
+1. In your Vercel project dashboard, go to **Settings** -> **Domains**.
+2. Enter your domain name and click **Add**.
+3. Vercel will provide you with DNS records (typically an `A` record and a `CNAME` record).
+4. Update your domain registrar's DNS settings with these values.
+5. Once DNS propagates, your dashboard will be available at your custom domain!
+
 ---
 
 ## 🛠 Raspberry Pi Setup
@@ -152,3 +177,12 @@ Automatically deletes photos older than 2 days.
 ```
 
 ---
+
+## 📚 A Woman’s Guide to Winning in Tech
+
+If you enjoyed this repo, check out my book, **A Woman’s Guide to Winning in Tech.** This book blends sharp humor with practical career strategies to help women navigate tech on their own terms—without changing who they are. Available on Amazon, Bookshop.org, Barnes & Noble, and IngramSpark.
+
+- 🌐 [Book Website](https://winningintech.com/) 
+- 📘 [Amazon](https://amzn.to/3YxHVO7)
+- [Instagram](https://www.instagram.com/winning.tech)
+- [Facebook](https://www.facebook.com/winningintech)
