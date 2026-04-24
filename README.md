@@ -8,43 +8,42 @@ Follow these steps to set up your own plant monitoring station.
 
 ### 1. Fork the Repository
 - Click the **Fork** button at the top right of this page to create your own copy of the project.
-- Once forked, you can clone it or import it directly into **Google AI Studio** for one-click deployment.
+- Clone your forked repository to your local machine.
 
-### 2. Set Up Google AI Studio
-- Import your forked repository into [Google AI Studio](https://ai.studio/build).
-- Go to **Settings** and add the following Environment Variables:
-  - `GEMINI_API_KEY`: Your Google AI API Key (Get one [here](https://aistudio.google.com/app/apikey)).
-  - `UPLOAD_SECRET`: A custom password (e.g., `MySecret123`) that your Raspberry Pi will use to verify uploads.
+### 2. Set Up Firebase
+1. Go to the [Firebase Console](https://console.firebase.google.com/) and create a new project.
+2. **Firestore Database**: Create a database in "Production Mode" and choose a location.
+3. **Security Rules**: Copy the content of `firestore.rules` from this repo and paste it into the "Rules" tab of your Firestore database in the Firebase console.
+4. **Project Settings**:
+   - Go to Project Settings (gear icon).
+   - Under "General", scroll down to "Your apps" and click the `</>` icon to add a Web App.
+   - Register the app (you don't need Firebase Hosting for now).
+   - Copy the `firebaseConfig` object values. You will need these for Vercel.
 
-### 3. Set Up Firebase
-- In AI Studio, use the **Set up Firebase** tool to provision your database and authentication.
-- This will generate a `firebase-applet-config.json` file in your project root. **Keep this file private.**
-- Deploy the security rules provided in `firestore.rules` using the **Deploy Firebase** tool.
+### 3. Get a Gemini API Key
+- Go to [Google AI Studio](https://aistudio.google.com/app/apikey) and generate a free API Key.
 
 ### 4. Publishing to Vercel
-To publish your dashboard to a custom URL with Vercel:
+To publish your dashboard to a custom URL:
 1. Go to [Vercel](https://vercel.com/) and sign in with your GitHub account.
 2. Click **Add New** -> **Project**.
 3. Import your forked repository.
-4. **Environment Variables**: In the Vercel project settings, add the following variables:
-   - `GEMINI_API_KEY`: Your Google AI API Key.
-   - `UPLOAD_SECRET`: The same password you set in Google AI Studio.
-   - `VITE_FIREBASE_API_KEY`: Your Firebase API key.
-   - `VITE_FIREBASE_PROJECT_ID`: Your Firebase Project ID.
-   - `VITE_FIREBASE_APP_ID`: Your Firebase App ID.
-   - `VITE_FIREBASE_DATABASE_ID`: Your Firestore Database ID (from `firebase-applet-config.json`).
-   - `VITE_FIREBASE_AUTH_DOMAIN`: Your Firebase Auth Domain.
-   - `VITE_FIREBASE_STORAGE_BUCKET`: Your Firebase Storage Bucket.
-   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: Your Firebase Messaging Sender ID.
+4. **Environment Variables**: Add the following variables in the "Environment Variables" section:
+   - `GEMINI_API_KEY`: Your Gemini API Key.
+   - `UPLOAD_SECRET`: A custom password (e.g., `MySecret123`) for your Raspberry Pi to verify uploads.
+   - `VITE_FIREBASE_API_KEY`: From your Firebase config.
+   - `VITE_FIREBASE_PROJECT_ID`: From your Firebase config.
+   - `VITE_FIREBASE_APP_ID`: From your Firebase config.
+   - `VITE_FIREBASE_DATABASE_ID`: (Optional) Your Firestore Database ID (usually `(default)`).
+   - `VITE_FIREBASE_AUTH_DOMAIN`: From your Firebase config.
+   - `VITE_FIREBASE_STORAGE_BUCKET`: From your Firebase config.
+   - `VITE_FIREBASE_MESSAGING_SENDER_ID`: From your Firebase config.
 5. Click **Deploy**. Vercel will build and host your application.
 
-### 5. Custom Domain
-If you want to use your own domain (e.g., `myplantreview.com`):
+### 5. Custom Domain (Optional)
 1. In your Vercel project dashboard, go to **Settings** -> **Domains**.
 2. Enter your domain name and click **Add**.
-3. Vercel will provide you with DNS records (typically an `A` record and a `CNAME` record).
-4. Update your domain registrar's DNS settings with these values.
-5. Once DNS propagates, your dashboard will be available at your custom domain!
+3. Follow the DNS instructions provided by Vercel to link your domain.
 
 ---
 
