@@ -137,7 +137,6 @@ def capture_image():
 
 if __name__ == "__main__":
     capture_image()
-
    ```
 
 ---
@@ -159,7 +158,7 @@ Sends the most recent photo directly to your Firestore database.
    ```bash
    nano ~/PlantPhotos/upload.py
    ```
-2. Paste the script below (Replace the placeholders with values from your `firebase-applet-config.json`):
+2. Paste the script below (Replace the placeholders with values from your Firebase Project Settings):
 
 ```python
 import base64
@@ -168,9 +167,12 @@ import os
 import time
 
 # --- CONFIGURATION (DO NOT SHARE PUBLICLY) ---
+# Find these in Firebase Console -> Project Settings -> General
 API_KEY = "<YOUR_WEB_API_KEY>"
-PROJECT_ID = "<YOUR_PROJECT_ID>"
-DB_ID = "<YOUR_FIRESTORE_DB_ID>"
+PROJECT_ID = "<YOUR_PROJECT_ID>" 
+# DB_ID is usually "(default)" unless you created a named database
+DB_ID = "(default)"
+# SECRET must match the UPLOAD_SECRET in your Vercel/AI Studio settings
 SECRET = "<YOUR_UPLOAD_SECRET>"
 IMAGE_DIR = os.path.expanduser("~/PlantPhotos")
 # ---------------------
