@@ -105,13 +105,25 @@ export default function App() {
 
       if (data.length > 0) {
         const latest = data[0];
-        setRemoteImage(latest.image);
-        setLastUpdated(latest.timestamp);
         
-        // Only update score/analysis if they are present in the snapshot
-        // to avoid clearing them back to null while analysis might be running
-        if (latest.score !== undefined) setHealthScore(latest.score);
-        if (latest.analysis !== undefined) setAiReport(latest.analysis);
+        // Use a functional update or closure-safe check? 
+        // We need to know if this is a NEW uplink compared to what we have in STATE.
+        setLastUpdated(prev => {
+          if (!prev || latest.timestamp > prev) {
+            // It's a brand new upload!
+            setRemoteImage(latest.image);
+            // Clear current analysis so the analyzer triggers for the new image
+            setHealthScore(latest.score ?? null);
+            setAiReport(latest.analysis ?? null);
+            return latest.timestamp;
+          } else if (latest.timestamp === prev) {
+            // It's an update to the CURRENT snapshot (e.g. analysis results saved to DB)
+            if (latest.score !== undefined) setHealthScore(latest.score);
+            if (latest.analysis !== undefined) setAiReport(latest.analysis);
+            return prev;
+          }
+          return prev;
+        });
       }
     }, (err) => {
       console.error("Firestore history listener error:", err);
