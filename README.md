@@ -153,32 +153,31 @@ Takes a photo every 30 minutes from 7 am to 7 pm daily.
 */30 7-18 * * * /usr/bin/python3 ~/PlantPhotos/takephoto.py
 ```
 
-### 2. Automatic AI Upload (Firebase Direct)
-Sends the most recent photo directly to your Firestore database.
+### 2. Automatic AI Upload (via Dashboard API)
+Sends the most recent photo to your deployed dashboard, which then persists it to Firestore.
 
 1. Create `upload.py`:
    ```bash
    nano ~/PlantPhotos/upload.py
    ```
-2. Paste the script below (Replace the placeholders with values from your Firebase Project Settings):
+2. Paste the script below:
    ```python
    import base64
    import requests
    import os
    import time
 
-   # --- CONFIGURATION (DO NOT SHARE PUBLICLY) ---
-   # Find these in Firebase Console -> Project Settings -> General
-   API_KEY = "<YOUR_WEB_API_KEY>"
-   PROJECT_ID = "<YOUR_PROJECT_ID>" 
-   # DB_ID is usually "(default)" unless you created a named database
-   DB_ID = "(default)"
-   # SECRET must match the UPLOAD_SECRET in your Vercel/AI Studio settings
+   # --- CONFIGURATION ---
+   # Your deployed Vercel URL (e.g., https://my-plant-app.vercel.app)
+   DASHBOARD_URL = "https://<YOUR_VERCEL_URL>"
+   # SECRET must match the UPLOAD_SECRET in your Vercel Environment Variables
    SECRET = "<YOUR_UPLOAD_SECRET>"
    IMAGE_DIR = os.path.expanduser("~/PlantPhotos")
    # ---------------------
 
    def get_latest_image():
+       if not os.path.exists(IMAGE_DIR):
+           return None
        files = [os.path.join(IMAGE_DIR, f) for f in os.listdir(IMAGE_DIR) if f.endswith('.jpg')]
        return max(files, key=os.path.getctime) if files else None
 
@@ -187,23 +186,26 @@ Sends the most recent photo directly to your Firestore database.
        print("No photos found.")
        exit()
 
-   with open(latest, "rb") as img_file:
-       b64_string = base64.b64encode(img_file.read()).decode('utf-8')
+   try:
+       with open(latest, "rb") as img_file:
+           b64_string = base64.b64encode(img_file.read()).decode('utf-8')
 
-   url = f"https://firestore.googleapis.com/v1/projects/{PROJECT_ID}/databases/{DB_ID}/documents/snapshots?key={API_KEY}"
-   payload = {
-       "fields": {
-           "image": {"stringValue": b64_string},
-           "timestamp": {"integerValue": str(int(time.time() * 1000))},
-           "secret": {"stringValue": SECRET}
+       # We hit the /api/upload-image endpoint on your dashboard
+       url = f"{DASHBOARD_URL.rstrip('/')}/api/upload-image"
+       payload = {
+           "image": b64_string,
+           "secret": SECRET
        }
-   }
 
-   response = requests.post(url, json=payload)
-   if response.status_code == 200:
-       print(f" Uploaded: {os.path.basename(latest)}")
-   else:
-       print(f" Error {response.status_code}: {response.text}")
+       print(f"Uploading to {url}...")
+       response = requests.post(url, json=payload, timeout=30)
+       
+       if response.status_code == 200:
+           print(f"✅ Success! Uploaded: {os.path.basename(latest)}")
+       else:
+           print(f"❌ Error {response.status_code}: {response.text}")
+   except Exception as e:
+       print(f"❌ Connection failed: {e}")
    ```
 
 3. Add to Crontab:
