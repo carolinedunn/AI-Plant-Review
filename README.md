@@ -55,11 +55,18 @@ To publish your dashboard to a custom URL:
 Ensure your Raspberry Pi is up to date and has the necessary tools installed. We use `libcamera` for official Pi Cameras or `fswebcam` for USB webcams.
 
 ```bash
-sudo apt-get update
-sudo apt-get install curl coreutils fswebcam python3
+sudo apt update
+sudo apt install curl coreutils fswebcam python3
 ```
 
-### 2. Directory Structure
+### 2. Hardware Test (Optional but Recommended)
+If you are using an official Raspberry Pi Camera module, run this to verify it is connected correctly:
+```bash
+rpicam-hello --list-cameras
+```
+*Tip: On the Pi Zero, ensuring the silver contacts on the ribbon cable face the PCB is the most common fix for connection issues.*
+
+### 3. Directory Structure
 Ensure the storage directory exists where photos will be saved:
 ```bash
 mkdir -p ~/PlantPhotos
@@ -69,75 +76,81 @@ mkdir -p ~/PlantPhotos
 
 ## 📸 Camera Script Setup (`takephoto.py`)
 
-Create the Python script on your Raspberry Pi to handle the photo capture.
+This project includes a robust `takephoto.py` script that automatically detects your hardware (e.g., Pi Zero vs. Pi 4) and supports both USB webcams and official Pi Cameras.
 
-1. Create the file:
+1. Create the file on your Pi:
    ```bash
    nano ~/PlantPhotos/takephoto.py
    ```
 2. Paste the following code:
    ```python
-   import os
    import subprocess
+   import os
    import datetime
+   import shutil
+
+   # --- CONFIGURATION ---
+   USE_PI_CAMERA = False # Set to False for USB webcam, True for Pi Camera module
+   IMAGE_DIR = os.path.expanduser("~/PlantPhotos")
+   RESOLUTION_W = "800"
+   RESOLUTION_H = "800"
+
+   def get_camera_command():
+       """Detects whether to use rpicam-still or libcamera-still."""
+       if shutil.which("rpicam-still"):
+           return "rpicam-still"
+       elif shutil.which("libcamera-still"):
+           return "libcamera-still"
+       return None
+
+   def is_camera_connected():
+       """Checks if the system actually sees a camera module."""
+       try:
+           cmd = "rpicam-hello" if shutil.which("rpicam-hello") else "libcamera-hello"
+           result = subprocess.run([cmd, "--list-cameras"], capture_output=True, text=True)
+           return "Available cameras" in result.stdout and "- " in result.stdout
+       except:
+           return False
+
+   def ensure_directory():
+       if not os.path.exists(IMAGE_DIR):
+           os.makedirs(IMAGE_DIR)
 
    def capture_image():
-       """
-       Captures a single photo from the connected webcam using fswebcam.
-       Generates a filename based on the current system time.
-       Saves the image to ~/PlantPhotos/.
-       """
-       # Target directory for photos
-       target_dir = os.path.expanduser("~/PlantPhotos/")
-       
-       # Ensure the directory exists
-       if not os.path.exists(target_dir):
-           try:
-               os.makedirs(target_dir)
-               print(f"Created directory: {target_dir}")
-           except Exception as e:
-               print(f"Failed to create directory {target_dir}: {e}")
+       timestamp = datetime.datetime.now().strftime("%Y-%m-%d_%H%M")
+       filename = f"{timestamp}.jpg"
+       filepath = os.path.join(IMAGE_DIR, filename)
+
+       if USE_PI_CAMERA:
+           if not is_camera_connected():
+               print("--- HARDWARE ERROR ---")
+               print("No camera detected. Please check your ribbon cable orientation.")
                return None
 
-       # Generate timestamp in yyyy-mm-dd-hh-mm format
-       timestamp = datetime.datetime.now().strftime("%Y-%m-%d-%H-%M")
-       filename = f"{timestamp}.jpg"
-       
-       # Define the full path
-       filepath = os.path.join(target_dir, filename)
-
-       print(f"Attempting to capture: {filename}")
-
-       try:
-           # Tuning parameters for fswebcam:
-           # -r: resolution (800x800)
-           # --no-banner: removes the timestamp text overlay
-           # -S 20: Skips first 20 frames to allow auto-exposure to stabilize
-           # --set brightness=20%: Darkens the image to fix overexposure
-           # --set contrast=60%: Increases contrast for better AI analysis
-           
-           subprocess.run([
-               "fswebcam", 
-               "-r", "800x800", 
-               "--no-banner",
-               "-S", "20",
-               "--set", "brightness=20%",
-               "--set", "contrast=60%",
-               filepath
-           ], check=True)
-           
-           print(f"Success! Photo saved at: {filepath}")
-           return filepath
-
-       except subprocess.CalledProcessError as e:
-           print(f"Error: Failed to capture image. Check webcam connection.")
-           print(f"Technical details: {e}")
-           return None
-       except Exception as e:
-           print(f"An unexpected error occurred: {e}")
-           return None
+           cmd = get_camera_command()
+           try:
+               # -t 2000 allows for better auto-exposure stabilization
+               subprocess.run([
+                   cmd, "--nopreview", "-t", "2000",
+                   "--width", RESOLUTION_W, "--height", RESOLUTION_H,
+                   "-o", filepath
+               ], check=True)
+               return filepath
+           except subprocess.CalledProcessError:
+               return None
+       else:
+           # USB Webcam logic
+           if not shutil.which("fswebcam"):
+               print("Error: fswebcam not found.")
+               return None
+           try:
+               subprocess.run(["fswebcam", "-r", f"{RESOLUTION_W}x{RESOLUTION_H}", "-S", "20", "--no-banner", filepath], check=True)
+               return filepath
+           except subprocess.CalledProcessError:
+               return None
 
    if __name__ == "__main__":
+       ensure_directory()
        capture_image()
    ```
 
