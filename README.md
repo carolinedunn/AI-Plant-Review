@@ -6,6 +6,12 @@ A real-time plant monitoring dashboard powered by Gemini AI and Raspberry Pi. Th
 
 Follow these steps to set up your own plant monitoring station.
 
+<a href="https://youtu.be/2Ml0UmqRSCw">
+  <img src="plant-thumbnail.jpg" width="720" alt="DIY Remote Plant Monitor">
+</a>
+
+[DIY Remote Plant Monitor: How to Monitor Plant Health from Anywhere using Raspberry Pi & AI](https://youtu.be/2Ml0UmqRSCw)
+
 ### 1. Fork the Repository
 - Click the **Fork** button at the top right of this page to create your own copy of the project.
 - Clone your forked repository to your local machine.
